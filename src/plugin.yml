@@ -1,0 +1,24 @@
+name: Parties
+main: com.bekvon.bukkit.parties.Parties
+version: 1.2.1
+description: Party Plugin for Bukkit.
+author: bekvon
+commands:
+  party:
+    description: Create and join parties with other players.
+    usage: /party create [PartyName] <open|invite|leader>
+           /party leave
+           /party join
+           /party list
+           /party invite [PlayerName]
+           /party accept
+           /party decline
+           /party tp [PlayerName]
+           /party tpaccept
+           /party tpdecline
+           /party disband
+           /party kick [PlayerName]
+           /party leader [PlayerName]
+  pc:
+    description: Chat in party.
+    usage: /pc <Message>
