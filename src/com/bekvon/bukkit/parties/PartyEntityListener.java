@@ -42,7 +42,7 @@ public class PartyEntityListener extends EntityListener {
                     if(Parties.getPartyManager().getPlayersPartyName(defender.getName()).equals(Parties.getPartyManager().getPlayersPartyName(attacker.getName())))
                     {
                         event.setCancelled(true);
-                        attacker.sendMessage("Party PVP is disabled.");
+                        attacker.sendMessage(Parties.getPartyManager().getErrorColor()+"Party PVP is disabled.");
                     }
                 }
             }

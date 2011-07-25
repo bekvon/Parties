@@ -49,7 +49,7 @@ public class PlayerParty implements Serializable {
                 joinedPlayers.remove(i);
                 Player player = Parties.getPlayer(playerName);
                 if(player != null && player.isOnline())
-                    player.sendMessage("§cYou are no longer in a party.");
+                    player.sendMessage(Parties.getPartyManager().getMessageColor()+"You are no longer in a party.");
                 sendPartyMessage(thisPlayer + " has left the party.");
                 if(i == partyLeader && !joinedPlayers.isEmpty())
                 {
@@ -103,25 +103,27 @@ public class PlayerParty implements Serializable {
 
     public synchronized void sendPartyChat(String message, String srcPlayer)
     {
+        PartyManager pmanager = Parties.getPartyManager();
         for(int i = 0; i < joinedPlayers.size(); i ++)
         {
             Player player = Parties.getPlayer(joinedPlayers.get(i));
             if(player!= null && player.isOnline())
-                player.sendMessage("§2[Party]" + srcPlayer + ": " + message);
+                player.sendMessage(pmanager.getChatPrefixColor() + pmanager.getChatPrefix() + " " + srcPlayer + ": " + pmanager.getChatColor() + message);
         }
     }
     
     public synchronized void sendPartyMessage(String message) {
+        PartyManager pmanager = Parties.getPartyManager();
         for (int i = 0; i < joinedPlayers.size(); i++) {
             Player player = Parties.getPlayer(joinedPlayers.get(i));
             if(player != null && player.isOnline())
-                player.sendMessage("§2[Party Message] " + message);
+                player.sendMessage(pmanager.getMessagePrefixColor() +pmanager.getMessagePrefix()+" " + pmanager.getMessageColor() + message);
         }
     }
 
     public synchronized void removeAllFromParty()
     {
-        sendPartyMessage("§4Party is being disbanded...");
+        sendPartyMessage("Party is being disbanded...");
         joinedPlayers.clear();
         partyLeader = 0;
     }
@@ -148,7 +150,7 @@ public class PlayerParty implements Serializable {
         {
             if(p1.isOnline() && p2.isOnline())
             {
-                p1.teleportTo(p2);
+                p1.teleport(p2.getLocation());
             }
         }
     }

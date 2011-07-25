@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 /**
@@ -33,6 +34,15 @@ public class PartyManager implements Serializable {
     private boolean tpEnabled;
     private boolean chatEnabled;
     private boolean pvpEnabled;
+    private int  maxPartySize;
+    private String chatprefix;
+    private ChatColor chatprefixcolor;
+    private ChatColor chatcolor;
+    private String messageprefix;
+    private ChatColor messageprefixcolor;
+    private ChatColor messagecolor;
+    private ChatColor errorcolor;
+    private ChatColor successcolor;
 
     public PartyManager() {
         parties = new HashMap<String,PlayerParty>();
@@ -44,6 +54,7 @@ public class PartyManager implements Serializable {
         partyChatToggled = new HashMap<String,Boolean>();
         pvpEnabled = false;
         chatEnabled = true;
+        maxPartySize = 20;
     }
 
     public synchronized void createParty(String partyName, String creator, PartyType partyType)
@@ -57,23 +68,23 @@ public class PartyManager implements Serializable {
         boolean hasAllow = Parties.hasAuthority(player, "parties.allow.create", false);
         if(!hasAllow && (hasDeny))
         {
-            player.sendMessage("§cYou dont have access to party creation.");
+            player.sendMessage(errorcolor+"You dont have access to party creation.");
             return;
         }
         if(isPlayerInParty(creator))
         {
-            player.sendMessage("§cYou are already in a party!");
+            player.sendMessage(errorcolor+"You are already in a party!");
             return;
         }
         if(partyExists(partyName))
         {
-            player.sendMessage("§cError, this party name already exists...");
+            player.sendMessage(errorcolor+"Error, this party name already exists...");
             return;
         }
         parties.put(partyName, new PlayerParty(partyName,creator));
         ptype.put(partyName, partyType);
         playersParty.put(creator, partyName);
-        player.sendMessage("§aParty " + partyName + " has been created.");
+        player.sendMessage(successcolor+"Party " + partyName + " has been created.");
     }
     
     public synchronized void removeParty(String partyName)
@@ -129,12 +140,17 @@ public class PartyManager implements Serializable {
         boolean hasAllow = Parties.hasAuthority(player, "parties.allow.join", false);
         if(!hasAllow && (hasDeny))
         {
-            player.sendMessage("§cYou dont have access to join partys.");
+            player.sendMessage(errorcolor+"You dont have access to join partys.");
+            return;
+        }
+        if(party.getPartyCount()>=maxPartySize)
+        {
+            player.sendMessage(errorcolor+"Party §e"+partyName + "§c is full.");
             return;
         }
         if (party != null) {
             if (this.isPlayerInParty(addPlayer)) {
-                player.sendMessage("§cYou are already in a party!");
+                player.sendMessage(errorcolor+"You are already in a party!");
                 return;
             }
             PartyType type = ptype.get(partyName);
@@ -142,10 +158,10 @@ public class PartyManager implements Serializable {
                 party.addToParty(addPlayer);
                 playersParty.put(addPlayer, party.getPartyName());
             } else {
-                player.sendMessage("§cThis is not a free-join party...");
+                player.sendMessage(errorcolor+"This is not a free-join party...");
             }
         } else {
-            player.sendMessage("§cParty does not exist.");
+            player.sendMessage(errorcolor+"Party does not exist.");
         }
     }
 
@@ -156,7 +172,7 @@ public class PartyManager implements Serializable {
         Player reqPlayer = Parties.getPlayer(requestPlayer);
         if (party != null) {
             if (removePlayer == null || !party.isInParty(removePlayer)) {
-                reqPlayer.sendMessage("§cInvalid target player.");
+                reqPlayer.sendMessage(errorcolor+"Invalid target player.");
                 return;
             }
             if (removePlayer.equals(requestPlayer) || party.isPartyLeader(requestPlayer)) {
@@ -166,7 +182,7 @@ public class PartyManager implements Serializable {
                 if(invitedby.containsKey(removePlayer))
                     invitedby.remove(removePlayer);
             } else {
-                reqPlayer.sendMessage("§cYou dont have permission to remove people from the party.");
+                reqPlayer.sendMessage(errorcolor+"You dont have permission to remove people from the party.");
             }
             if(party.getPartyCount() == 0)
                 removeParty(party.getPartyName());
@@ -184,7 +200,7 @@ public class PartyManager implements Serializable {
 
         if(!hasAllow && (hasDeny || !chatEnabled))
         {
-            player.sendMessage("§cYou dont have access to party chat.");
+            player.sendMessage(errorcolor+"You dont have access to party chat.");
             return;
         }
         if(playersParty.containsKey(sendPlayer))
@@ -197,7 +213,7 @@ public class PartyManager implements Serializable {
         }
         else
         {
-            player.sendMessage("§cYou are not in a party.");
+            player.sendMessage(errorcolor+"You are not in a party.");
         }
     }
 
@@ -210,26 +226,26 @@ public class PartyManager implements Serializable {
             return;
         boolean hasDeny = Parties.hasAuthority(reqPlayer, "parties.deny.tp", false);
         boolean hasAllow = Parties.hasAuthority(reqPlayer, "parties.allow.tp", false);
-        if(!hasAllow && (hasDeny || !chatEnabled))
+        if(!hasAllow && (hasDeny || !tpEnabled))
         {
-            reqPlayer.sendMessage("§cYou dont have access to party teleport.");
+            reqPlayer.sendMessage(errorcolor+"You dont have access to party teleport.");
             return;
         }
         if(requestPlayer.equals(targetPlayer))
         {
-            reqPlayer.sendMessage("§cYou cannot teleport to yourself!");
+            reqPlayer.sendMessage(errorcolor+"You cannot teleport to yourself!");
             return;
         }
         Player targPlayer = Parties.getPlayer(targetPlayer);
         PlayerParty party = getPlayersParty(requestPlayer);
         if(party == null)
         {
-            reqPlayer.sendMessage("§cYou are not in a party.");
+            reqPlayer.sendMessage(errorcolor+"You are not in a party.");
             return;
         }
         if(targetPlayer == null || !party.isInParty(targetPlayer))
         {
-            reqPlayer.sendMessage("§cTarget player is not in your party.");
+            reqPlayer.sendMessage(errorcolor+"Target player is not in your party.");
             return;
         }
         if(tprequest.containsKey(targetPlayer))
@@ -239,11 +255,11 @@ public class PartyManager implements Serializable {
             {
                 if(get.equals(requestPlayer))
                 {
-                    reqPlayer.sendMessage("§cYou are already requesting a teleport from this player!");
+                    reqPlayer.sendMessage(errorcolor+"You are already requesting a teleport from this player!");
                 }
                 else
                 {
-                    reqPlayer.sendMessage("§cSomone else is already requesting a teleport to this player.");
+                    reqPlayer.sendMessage(errorcolor+"Somone else is already requesting a teleport to this player.");
                 }
                 return;
             }
@@ -252,8 +268,8 @@ public class PartyManager implements Serializable {
                 tprequest.remove(targetPlayer);
             }
         }
-        targPlayer.sendMessage("§a" + requestPlayer + " requests to teleport to you, use /party tpaccept or /party tpdecline.");
-        reqPlayer.sendMessage("§aSent teleport request to " + targetPlayer);
+        targPlayer.sendMessage(successcolor + requestPlayer + " requests to teleport to you, use /party tpaccept or /party tpdecline.");
+        reqPlayer.sendMessage(successcolor+"Sent teleport request to " + targetPlayer);
         tprequest.put(targetPlayer, requestPlayer);
     }
 
@@ -266,54 +282,54 @@ public class PartyManager implements Serializable {
         Player targPlayer = Parties.getPlayer(targetPlayer);
         PlayerParty party = getPlayersParty(requestPlayer);
         if (party == null) {
-            reqPlayer.sendMessage("§cYou are not in a party.");
+            reqPlayer.sendMessage(errorcolor+"You are not in a party.");
             return;
         }
         if(targPlayer==null)
         {
-            reqPlayer.sendMessage("Invalid target player.");
+            reqPlayer.sendMessage(errorcolor+"Invalid target player.");
             return;
         }
         boolean hasDeny = Parties.hasAuthority(targPlayer, "parties.deny.join", false);
         boolean hasAllow = Parties.hasAuthority(targPlayer, "parties.allow.join", false);
         if(!hasAllow && (hasDeny))
         {
-            reqPlayer.sendMessage("§cTarget person doesn't have access to join parties.");
+            reqPlayer.sendMessage(errorcolor+"Target person doesn't have access to join parties.");
             return;
         }
         if(ptype.get(party.getPartyName()) == PartyType.LEADER)
         {
             if(!party.isPartyLeader(requestPlayer))
             {
-                reqPlayer.sendMessage("§cOnly the party leader can send invites in this party.");
+                reqPlayer.sendMessage(errorcolor+"Only the party leader can send invites in this party.");
                 return;
             }
         }
         if(targPlayer == null || !targPlayer.isOnline())
         {
-            reqPlayer.sendMessage("§cTarget player is invalid or offline.");
+            reqPlayer.sendMessage(errorcolor+"Target player is invalid or offline.");
             return;
         }
         if(isPlayerInParty(targetPlayer))
         {
-            reqPlayer.sendMessage("§cTarget player is already in a party.");
+            reqPlayer.sendMessage(errorcolor+"Target player is already in a party.");
             return;
         }
         if (inviterequest.containsKey(targetPlayer)) {
             Player get = Parties.getPlayer(inviterequest.get(targetPlayer));
             if (get != null && get.isOnline()) {
                 if (get.equals(reqPlayer)) {
-                    reqPlayer.sendMessage("§cYou already invited this player!");
+                    reqPlayer.sendMessage(errorcolor+"You already invited this player!");
                 } else {
-                    reqPlayer.sendMessage("§cSomone else is inviting this player.");
+                    reqPlayer.sendMessage(errorcolor+"Somone else is inviting this player.");
                 }
                 return;
             } else {
                 inviterequest.remove(targetPlayer);
             }
         }
-        targPlayer.sendMessage("§a" + requestPlayer + " has invited you to party: " + party.getPartyName());
-        reqPlayer.sendMessage("§aSent party invite to " + targetPlayer);
+        targPlayer.sendMessage(successcolor + requestPlayer + "§e has invited you to party: §a" + party.getPartyName()+"§e use §a/party accept§e or §c/party decline§e to respond.");
+        reqPlayer.sendMessage(successcolor + "Sent party invite to " + targetPlayer);
         inviterequest.put(targetPlayer, requestPlayer);
     }
 
@@ -333,12 +349,12 @@ public class PartyManager implements Serializable {
             party.addToParty(targetPlayer);
             playersParty.put(targetPlayer, party.getPartyName());
             if(reqPlayer != null)
-                reqPlayer.sendMessage("§a" + targetPlayer + " accepted your party invite.");
+                reqPlayer.sendMessage(successcolor+ targetPlayer + " accepted your party invite.");
             inviterequest.remove(targetPlayer);
             invitedby.put(targetPlayer, requestPlayer);
-            targPlayer.sendMessage("§aYou accepted " + requestPlayer + "'s party invite.");
+            targPlayer.sendMessage(successcolor+"You accepted " + requestPlayer + "'s party invite.");
         } else {
-            targPlayer.sendMessage("§cYou have no pending party invite.");
+            targPlayer.sendMessage(errorcolor+"You have no pending party invite.");
         }
     }
 
@@ -351,12 +367,12 @@ public class PartyManager implements Serializable {
             String requestPlayer = inviterequest.get(targetPlayer);
             Player reqPlayer = Parties.getPlayer(requestPlayer);
             if (reqPlayer != null && reqPlayer.isOnline()) {
-                reqPlayer.sendMessage("§c" + targetPlayer + " declined your party invite.");
+                reqPlayer.sendMessage(errorcolor + targetPlayer + " declined your party invite.");
             }
             inviterequest.remove(targetPlayer);
-            targPlayer.sendMessage("§cYou declined " + requestPlayer + "'s party invite.");
+            targPlayer.sendMessage(errorcolor+"You declined " + requestPlayer + "'s party invite.");
         } else {
-            targPlayer.sendMessage("§cYou have no pending invite request.");
+            targPlayer.sendMessage(errorcolor+"You have no pending invite request.");
         }
     }
 
@@ -379,13 +395,13 @@ public class PartyManager implements Serializable {
             }
             party.partyTP(requestPlayer, targetPlayer);
             if(reqPlayer!=null)
-                reqPlayer.sendMessage("§a" + targetPlayer + " accepted your teleport request.");
+                reqPlayer.sendMessage(successcolor+ targetPlayer + " accepted your teleport request.");
             tprequest.remove(targetPlayer);
-            targPlayer.sendMessage("§aYou accepted " + requestPlayer + "'s teleport request.");
+            targPlayer.sendMessage(successcolor+"You accepted " + requestPlayer + "'s teleport request.");
         }
         else
         {
-            targPlayer.sendMessage("§cYou have no pending teleport request.");
+            targPlayer.sendMessage(errorcolor+"You have no pending teleport request.");
         }
     }
 
@@ -398,11 +414,11 @@ public class PartyManager implements Serializable {
             String requestPlayer = tprequest.get(targetPlayer);
             Player reqPlayer = Parties.getPlayer(requestPlayer);
             if(reqPlayer != null && reqPlayer.isOnline())
-                reqPlayer.sendMessage("§c" + targetPlayer + " declined your teleport request.");
+                reqPlayer.sendMessage(errorcolor + targetPlayer + " declined your teleport request.");
             tprequest.remove(targetPlayer);
-            targPlayer.sendMessage("§cYou declined " + reqPlayer + "'s teleport request.");
+            targPlayer.sendMessage(errorcolor+"You declined " + reqPlayer + "'s teleport request.");
         } else {
-            targPlayer.sendMessage("§cYou have no pending teleport request.");
+            targPlayer.sendMessage(errorcolor+"You have no pending teleport request.");
         }
     }
 
@@ -443,7 +459,7 @@ public class PartyManager implements Serializable {
             return;
         if(!isPlayerInParty(player))
         {
-            p.sendMessage("§cYou are not in a party.");
+            p.sendMessage(errorcolor+"You are not in a party.");
             return;
         }
         PlayerParty party = getPlayersParty(player);
@@ -453,7 +469,7 @@ public class PartyManager implements Serializable {
         }
         else
         {
-            p.sendMessage("§cYou are not party leader.");
+            p.sendMessage(errorcolor+"You are not party leader.");
         }
     }
 
@@ -464,7 +480,7 @@ public class PartyManager implements Serializable {
         Player requestPlayer = Parties.getPlayer(reqPlayer);
         if(!isPlayerInParty(reqPlayer))
         {
-            requestPlayer.sendMessage("§cYou are not in a party.");
+            requestPlayer.sendMessage(errorcolor+"You are not in a party.");
             return;
         }
         PlayerParty party = getPlayersParty(reqPlayer);
@@ -472,14 +488,14 @@ public class PartyManager implements Serializable {
         {
             if(!party.isInParty(targetPlayer))
             {
-                requestPlayer.sendMessage("§cTarget player is not in the party.");
+                requestPlayer.sendMessage(errorcolor+"Target player is not in the party.");
                 return;
             }
             party.setPartyLeader(targetPlayer);
         }
         else
         {
-            requestPlayer.sendMessage("§cYou are not the party leader.");
+            requestPlayer.sendMessage(errorcolor+"You are not the party leader.");
         }
     }
 
@@ -489,14 +505,14 @@ public class PartyManager implements Serializable {
         if(requestPlayer == null)
             return;
         if (!isPlayerInParty(reqPlayer)) {
-            requestPlayer.sendMessage("§cYou are not in a party.");
+            requestPlayer.sendMessage(errorcolor+"You are not in a party.");
             return;
         }
         PlayerParty party = getPlayersParty(reqPlayer);
         if (party.isPartyLeader(reqPlayer)) {
             ptype.put(party.getPartyName(), intype);
         } else {
-            requestPlayer.sendMessage("§cYou are not the party leader.");
+            requestPlayer.sendMessage(errorcolor+"You are not the party leader.");
         }
     }
 
@@ -507,14 +523,14 @@ public class PartyManager implements Serializable {
         if(requestPlayer == null)
             return;
         if (!isPlayerInParty(reqPlayer)) {
-            requestPlayer.sendMessage("§cYou are not in a party.");
+            requestPlayer.sendMessage(errorcolor+"You are not in a party.");
             return;
         }
 
         PlayerParty party = getPlayersParty(reqPlayer);
         if (party.isPartyLeader(reqPlayer)) {
             if (partyExists(newName)) {
-                requestPlayer.sendMessage("§cAnother party by that name already exists.");
+                requestPlayer.sendMessage(errorcolor+"Another party by that name already exists.");
                 return;
             }
             ptype.put(newName, ptype.remove(party.getPartyName()));
@@ -527,7 +543,7 @@ public class PartyManager implements Serializable {
                 playersParty.put(playerList[i], newName);
             }
         } else {
-            requestPlayer.sendMessage("§cYou are not the party leader.");
+            requestPlayer.sendMessage(errorcolor+"You are not the party leader.");
         }
     }
 
@@ -717,4 +733,93 @@ public class PartyManager implements Serializable {
         return chatEnabled;
     }
 
+    public int getMaxPartySize()
+    {
+        return maxPartySize;
+    }
+
+    public void setMaxPartySize(int size)
+    {
+        maxPartySize = size;
+    }
+
+    public void setChatPrefix(String string)
+    {
+        chatprefix = string;
+    }
+
+    public void setChatPrefixColor(ChatColor color)
+    {
+        chatprefixcolor = color;
+    }
+
+    public void setChatColor(ChatColor color)
+    {
+        chatcolor = color;
+    }
+
+    public void setMessagePrefix(String string)
+    {
+        messageprefix = string;
+    }
+
+    public void setMessagePrefixColor(ChatColor color)
+    {
+        messageprefixcolor = color;
+    }
+
+    public void setMessageColor(ChatColor color)
+    {
+        messagecolor = color;
+    }
+
+    public void setErrorColor(ChatColor color)
+    {
+        errorcolor = color;
+    }
+
+    public ChatColor getErrorColor()
+    {
+        return errorcolor;
+    }
+
+    public ChatColor getMessageColor()
+    {
+        return messagecolor;
+    }
+
+    public ChatColor getMessagePrefixColor()
+    {
+        return messageprefixcolor;
+    }
+
+    public String getMessagePrefix()
+    {
+        return messageprefix;
+    }
+
+    public ChatColor getChatColor()
+    {
+        return chatcolor;
+    }
+
+    public ChatColor getChatPrefixColor()
+    {
+        return chatprefixcolor;
+    }
+
+    public String getChatPrefix()
+    {
+        return chatprefix;
+    }
+
+    public ChatColor getSuccessColor()
+    {
+        return successcolor;
+    }
+
+    public void setSuccessColor(ChatColor color)
+    {
+        successcolor = color;
+    }
 }

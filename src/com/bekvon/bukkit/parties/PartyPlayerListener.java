@@ -28,9 +28,11 @@ public class PartyPlayerListener extends PlayerListener {
         if(event.isCancelled() || !parent.isEnabled())
             return;
         String pname = event.getPlayer().getName();
-        if(Parties.getPartyManager().partyChatEnabled(pname) && Parties.getPartyManager().isPlayerInParty(pname))
+        PartyManager pmanager = Parties.getPartyManager();
+        if(pmanager.partyChatEnabled(pname) && pmanager.isPlayerInParty(pname))
         {
             Parties.getPartyManager().chatInParty(pname, event.getMessage());
+            System.out.println("[PartyChat] "+pname+": " + event.getMessage());
             event.setCancelled(true);
             return;
         }
@@ -58,6 +60,6 @@ public class PartyPlayerListener extends PlayerListener {
             Parties.getPartyManager().sendPartyMessage(Parties.getPartyManager().getPlayersPartyName(pname), "Party Member " + pname+" has logged out.");
             return;
         }
-        super.onPlayerQuit(event);
+        //super.onPlayerQuit(event);
     }
 }
