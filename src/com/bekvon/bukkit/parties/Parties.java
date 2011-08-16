@@ -72,12 +72,12 @@ public class Parties extends JavaPlugin {
         pmanager.setMessagePrefix(config.getString("partyMessagePrefix","[Party Message]"));
         try
         {
-            pmanager.setChatColor(ChatColor.valueOf(config.getString("partyChatColor","GREEN")));
-            pmanager.setChatPrefixColor(ChatColor.valueOf(config.getString("partyChatPrefixColor","DARK_GREEN")));
-            pmanager.setMessageColor(ChatColor.valueOf(config.getString("partyMessageColor","GREEN")));
-            pmanager.setMessagePrefixColor(ChatColor.valueOf(config.getString("partyMessagePrefixColor","DARK_GREEN")));
-            pmanager.setErrorColor(ChatColor.valueOf(config.getString("partyErrorColor","RED")));
-            pmanager.setSuccessColor(ChatColor.valueOf(config.getString("partySuccessColor","GREEN")));
+            pmanager.setChatColor(ChatColor.valueOf(config.getString("partyChatColor","GREEN").toUpperCase()));
+            pmanager.setChatPrefixColor(ChatColor.valueOf(config.getString("partyChatPrefixColor","DARK_GREEN").toUpperCase()));
+            pmanager.setMessageColor(ChatColor.valueOf(config.getString("partyMessageColor","GREEN").toUpperCase()));
+            pmanager.setMessagePrefixColor(ChatColor.valueOf(config.getString("partyMessagePrefixColor","DARK_GREEN").toUpperCase()));
+            pmanager.setErrorColor(ChatColor.valueOf(config.getString("partyErrorColor","RED").toUpperCase()));
+            pmanager.setSuccessColor(ChatColor.valueOf(config.getString("partySuccessColor","GREEN").toUpperCase()));
         } catch(Exception ex){
             pmanager.setChatColor(ChatColor.GREEN);
             pmanager.setChatPrefixColor(ChatColor.DARK_GREEN);
@@ -279,6 +279,8 @@ public class Parties extends JavaPlugin {
 
     public static boolean hasAuthority(Player player, String permission, boolean def)
     {
+        if(player.hasPermission(permission))
+            return true;
         if(authority == null)
             return def;
         else
